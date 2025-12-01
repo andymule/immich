@@ -9,6 +9,7 @@ import 'package:ffi/ffi.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/providers/image/cache/remote_image_cache_manager.dart';
 import 'package:immich_mobile/providers/infrastructure/platform.provider.dart';
+import 'package:immich_mobile/utils/ssl_http_client.dart';
 import 'package:logging/logging.dart';
 
 part 'local_image_request.dart';

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for mTLS support.
+    
+    This configuration allows the app to trust:
+    1. System CA certificates (pre-installed)
+    2. User-installed CA certificates (for self-signed CA support)
+    
+    To use a self-signed CA:
+    1. Install the CA certificate on the device via Settings → Security → Install certificates
+    2. The app will automatically trust servers signed by that CA
+    
+    Note: User-installed CAs are only trusted for this app, not system-wide network traffic.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Trust system CAs -->
+            <certificates src="system" />
+            <!-- Trust user-installed CAs for mTLS support -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+

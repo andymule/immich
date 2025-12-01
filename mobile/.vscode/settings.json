@@ -9,5 +9,6 @@
   },
   "files.watcherExclude": {
     "**/.fvm": true
-  }
+  },
+  "cmake.sourceDirectory": "/Users/amuehlhausen/immich-mtls-build/android/app"
 }

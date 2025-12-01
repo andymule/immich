@@ -36,6 +36,7 @@ const String appShareGroupId = "group.app.immich.share";
 const String kWidgetAuthToken = "widget_auth_token";
 const String kWidgetServerEndpoint = "widget_server_url";
 const String kWidgetCustomHeaders = "widget_custom_headers";
+const String kWidgetAllowSelfSigned = "widget_allow_self_signed";
 
 // add widget identifiers here for new widgets
 // these are used to force a widget refresh

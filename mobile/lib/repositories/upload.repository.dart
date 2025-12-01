@@ -93,6 +93,9 @@ class UploadRepository {
   }
 
   Future<void> backupWithDartClient(Iterable<UploadTaskWithFile> tasks, CancellationToken cancelToken) async {
+    // The cancellation_token_http Client uses IOClient internally,
+    // which respects HttpOverrides.global set by HttpSSLOptions.
+    // This ensures mTLS works for uploads.
     final httpClient = Client();
     final String savedEndpoint = Store.get(StoreKey.serverEndpoint);
 

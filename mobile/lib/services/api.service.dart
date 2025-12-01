@@ -7,6 +7,7 @@ import 'package:http/http.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
+import 'package:immich_mobile/utils/ssl_http_client.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/utils/user_agent.dart';
 import 'package:logging/logging.dart';
@@ -50,6 +51,8 @@ class ApiService implements Authentication {
 
   setEndpoint(String endpoint) {
     _apiClient = ApiClient(basePath: endpoint, authentication: this);
+    // Use SSL-configured HTTP client for mTLS support
+    _apiClient.client = SSLHttpClient.getHttpClient();
     _setUserAgentHeader();
     if (_accessToken != null) {
       setAccessToken(_accessToken!);

@@ -4,11 +4,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/extensions/theme_extensions.dart';
-import 'package:immich_mobile/utils/http_ssl_cert_override.dart';
 import 'package:immich_mobile/utils/http_ssl_options.dart';
+import 'package:immich_mobile/utils/ssl_http_client.dart';
 
 class SslClientCertSettings extends StatefulWidget {
   const SslClientCertSettings({super.key, required this.isLoggedIn});
@@ -20,9 +19,21 @@ class SslClientCertSettings extends StatefulWidget {
 }
 
 class _SslClientCertSettingsState extends State<SslClientCertSettings> {
-  _SslClientCertSettingsState() : isCertExist = SSLClientCertStoreVal.load() != null;
+  bool isCertExist = false;
+  bool isLoading = false;
 
-  bool isCertExist;
+  @override
+  void initState() {
+    super.initState();
+    _checkCertExists();
+  }
+
+  Future<void> _checkCertExists() async {
+    final exists = await HttpSSLOptions.hasClientCertificate();
+    if (mounted) {
+      setState(() => isCertExist = exists);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +56,14 @@ class _SslClientCertSettingsState extends State<SslClientCertSettings> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: widget.isLoggedIn ? null : () => importCert(context),
-                child: Text("client_cert_import".tr()),
+                onPressed: widget.isLoggedIn || isLoading ? null : () => importCert(context),
+                child: isLoading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text("client_cert_import".tr()),
               ),
               const SizedBox(width: 15),
               ElevatedButton(
-                onPressed: widget.isLoggedIn || !isCertExist ? null : () async => await removeCert(context),
+                onPressed: widget.isLoggedIn || !isCertExist || isLoading ? null : () async => await removeCert(context),
                 child: Text("remove".tr()),
               ),
             ],
@@ -74,17 +87,30 @@ class _SslClientCertSettingsState extends State<SslClientCertSettings> {
     if (password != null && password.isEmpty) {
       password = null;
     }
-    final cert = SSLClientCertStoreVal(data, password);
-    // Test whether the certificate is valid
-    final isCertValid = HttpSSLCertOverride.setClientCert(SecurityContext(withTrustedRoots: true), cert);
-    if (!isCertValid) {
+
+    setState(() => isLoading = true);
+
+    try {
+      // Validate certificate format first
+      if (!SSLHttpClient.validateClientCertificate(
+        _TempCertVal(data, password),
+      )) {
+        showMessage(context, "client_cert_invalid_msg".tr());
+        return;
+      }
+
+      // Import certificate (uses KeyStore on Android, Keychain on iOS)
+      await HttpSSLOptions.importClientCertificate(data, password ?? '');
+      
+      setState(() => isCertExist = true);
+      showMessage(context, "client_cert_import_success_msg".tr());
+    } catch (e) {
       showMessage(context, "client_cert_invalid_msg".tr());
-      return;
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
-    await cert.save();
-    HttpSSLOptions.apply();
-    setState(() => isCertExist = true);
-    showMessage(context, "client_cert_import_success_msg".tr());
   }
 
   void setPassword(BuildContext context, Uint8List data) {
@@ -122,9 +148,23 @@ class _SslClientCertSettingsState extends State<SslClientCertSettings> {
   }
 
   Future<void> removeCert(BuildContext context) async {
-    await SSLClientCertStoreVal.delete();
-    HttpSSLOptions.apply();
-    setState(() => isCertExist = false);
-    showMessage(context, "client_cert_remove_msg".tr());
+    setState(() => isLoading = true);
+    
+    try {
+      await HttpSSLOptions.removeClientCertificate();
+      setState(() => isCertExist = false);
+      showMessage(context, "client_cert_remove_msg".tr());
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
+}
+
+/// Temporary class for validation only (matches SSLClientCertStoreVal interface)
+class _TempCertVal {
+  final Uint8List data;
+  final String? password;
+  const _TempCertVal(this.data, this.password);
 }

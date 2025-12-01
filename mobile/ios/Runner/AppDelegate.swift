@@ -22,6 +22,7 @@ import UIKit
     let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
     AppDelegate.registerPlugins(with: controller.engine)
     BackgroundServicePlugin.register(with: self.registrar(forPlugin: "BackgroundServicePlugin")!)
+    SSLConfigPlugin.register(with: self.registrar(forPlugin: "SSLConfigPlugin")!)
 
     BackgroundServicePlugin.registerBackgroundProcessing()
     BackgroundWorkerApiImpl.registerBackgroundWorkers()

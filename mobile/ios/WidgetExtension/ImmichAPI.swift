@@ -195,7 +195,7 @@ class ImmichAPI {
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     applyCustomHeaders(for: &request)
     
-    let (data, _) = try await URLSession.shared.data(for: request)
+    let (data, _) = try await SSLURLSession.shared.data(for: request)
 
     // decode data
     return try JSONDecoder().decode([Asset].self, from: data)
@@ -218,7 +218,7 @@ class ImmichAPI {
     request.httpMethod = "GET"
     applyCustomHeaders(for: &request)
 
-    let (data, _) = try await URLSession.shared.data(for: request)
+    let (data, _) = try await SSLURLSession.shared.data(for: request)
 
     // decode data
     return try JSONDecoder().decode([MemoryResult].self, from: data)
@@ -277,7 +277,7 @@ class ImmichAPI {
     request.httpMethod = "GET"
     applyCustomHeaders(for: &request)
     
-    let (data, _) = try await URLSession.shared.data(for: request)
+    let (data, _) = try await SSLURLSession.shared.data(for: request)
 
     // decode data
     return try JSONDecoder().decode([Album].self, from: data)

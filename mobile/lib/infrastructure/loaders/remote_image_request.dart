@@ -2,7 +2,9 @@ part of 'image_request.dart';
 
 class RemoteImageRequest extends ImageRequest {
   static final log = Logger('RemoteImageRequest');
-  static final client = HttpClient()..maxConnectionsPerHost = 16;
+  // Use SSL-configured HTTP client for mTLS support
+  // Lazily access to ensure SSL is configured before use
+  static HttpClient get client => SSLHttpClient.getIOClient();
   final RemoteCacheManager? cacheManager;
   final String uri;
   final Map<String, String> headers;

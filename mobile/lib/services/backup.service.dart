@@ -43,6 +43,9 @@ final backupServiceProvider = Provider(
 );
 
 class BackupService {
+  // The http.Client from cancellation_token_http uses IOClient internally,
+  // which respects HttpOverrides.global set by HttpSSLOptions.
+  // This ensures mTLS works via the SSL-configured HttpClient.
   final httpClient = http.Client();
   final ApiService _apiService;
   final Logger _log = Logger("BackupService");

@@ -7,6 +7,7 @@ import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/models/sync_event.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/services/api.service.dart';
+import 'package:immich_mobile/utils/ssl_http_client.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
@@ -26,7 +27,8 @@ class SyncApiRepository {
     http.Client? httpClient,
   }) async {
     final stopwatch = Stopwatch()..start();
-    final client = httpClient ?? http.Client();
+    // Use SSL-configured HTTP client for mTLS support
+    final client = httpClient ?? SSLHttpClient.getHttpClient();
     final endpoint = "${_api.apiClient.basePath}/sync/stream";
 
     final headers = {'Content-Type': 'application/json', 'Accept': 'application/jsonlines+json'};
@@ -112,7 +114,10 @@ class SyncApiRepository {
     } catch (error, stack) {
       return Future.error(error, stack);
     } finally {
-      client.close();
+      // Don't close the shared SSL client - only close if a custom client was provided
+      if (httpClient != null) {
+        client.close();
+      }
     }
     stopwatch.stop();
     _logger.info("Remote Sync completed in ${stopwatch.elapsed.inMilliseconds}ms");

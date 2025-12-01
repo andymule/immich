@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/repositories/widget.repository.dart';
@@ -32,6 +34,14 @@ class WidgetService {
 
     // wait 3 seconds to ensure the widget is updated, dont block
     Future.delayed(const Duration(seconds: 3), refreshWidgets);
+  }
+
+  /// Sync SSL settings to widget shared storage (iOS only)
+  Future<void> syncSSLSettings(bool allowSelfSigned) async {
+    if (!Platform.isIOS) return;
+    
+    await _repository.setAppGroupId(appShareGroupId);
+    await _repository.saveData(kWidgetAllowSelfSigned, allowSelfSigned.toString());
   }
 
   Future<void> refreshWidgets() async {

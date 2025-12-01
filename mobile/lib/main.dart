@@ -35,6 +35,7 @@ import 'package:immich_mobile/services/deep_link.service.dart';
 import 'package:immich_mobile/services/local_notification.service.dart';
 import 'package:immich_mobile/theme/dynamic_theme.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
+import 'package:immich_mobile/pages/common/error_display_screen.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/cache/widgets_binding.dart';
 import 'package:immich_mobile/utils/debug_print.dart';
@@ -47,26 +48,46 @@ import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart';
 
 void main() async {
-  ImmichWidgetsBinding();
-  unawaited(BackgroundWorkerLockService(BackgroundWorkerLockApi()).lock());
-  final (isar, drift, logDb) = await Bootstrap.initDB();
-  await Bootstrap.initDomain(isar, drift, logDb);
-  await initApp();
-  // Warm-up isolate pool for worker manager
-  await workerManagerPatch.init(dynamicSpawning: true, isolatesCount: max(Platform.numberOfProcessors - 1, 5));
-  await migrateDatabaseIfNeeded(isar, drift);
-  HttpSSLOptions.apply();
+  try {
+    ImmichWidgetsBinding();
+    unawaited(BackgroundWorkerLockService(BackgroundWorkerLockApi()).lock());
+    final (isar, drift, logDb) = await Bootstrap.initDB();
+    await Bootstrap.initDomain(isar, drift, logDb);
+    await initApp();
+    // Warm-up isolate pool for worker manager
+    await workerManagerPatch.init(dynamicSpawning: true, isolatesCount: max(Platform.numberOfProcessors - 1, 5));
+    await migrateDatabaseIfNeeded(isar, drift);
+    
+    // Initialize SSL configuration (async for compute isolate)
+    await HttpSSLOptions.apply();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        dbProvider.overrideWithValue(isar),
-        isarProvider.overrideWithValue(isar),
-        driftProvider.overrideWith(driftOverride(drift)),
-      ],
-      child: const MainWidget(),
-    ),
-  );
+    runApp(
+      ProviderScope(
+        overrides: [
+          dbProvider.overrideWithValue(isar),
+          isarProvider.overrideWithValue(isar),
+          driftProvider.overrideWith(driftOverride(drift)),
+        ],
+        child: const MainWidget(),
+      ),
+    );
+  } catch (e, stackTrace) {
+    // Log the error for debugging
+    debugPrint('Fatal initialization error: $e');
+    debugPrint('Stack trace: $stackTrace');
+
+    // Display error screen to help user debug
+    runApp(
+      MaterialApp(
+        title: 'Immich - Initialization Error',
+        home: ErrorDisplayScreen(
+          error: e.toString(),
+          stackTrace: stackTrace.toString(),
+        ),
+        debugShowCheckedModeBanner: false,
+      ),
+    );
+  }
 }
 
 Future<void> initApp() async {

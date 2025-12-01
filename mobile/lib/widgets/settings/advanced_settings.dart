@@ -22,6 +22,7 @@ import 'package:immich_mobile/widgets/settings/settings_slider_list_tile.dart';
 import 'package:immich_mobile/widgets/settings/settings_sub_page_scaffold.dart';
 import 'package:immich_mobile/widgets/settings/settings_switch_list_tile.dart';
 import 'package:immich_mobile/widgets/settings/ssl_client_cert_settings.dart';
+import 'package:immich_mobile/services/widget.service.dart';
 import 'package:logging/logging.dart';
 
 class AdvancedSettings extends HookConsumerWidget {
@@ -123,7 +124,11 @@ class AdvancedSettings extends HookConsumerWidget {
         valueNotifier: allowSelfSignedSSLCert,
         title: "advanced_settings_self_signed_ssl_title".tr(),
         subtitle: "advanced_settings_self_signed_ssl_subtitle".tr(),
-        onChanged: HttpSSLOptions.applyFromSettings,
+        onChanged: (value) async {
+          await HttpSSLOptions.apply();
+          // Sync to iOS widget shared storage
+          await ref.read(widgetServiceProvider).syncSSLSettings(value);
+        },
       ),
       const CustomProxyHeaderSettings(),
       SslClientCertSettings(isLoggedIn: ref.read(currentUserProvider) != null),
